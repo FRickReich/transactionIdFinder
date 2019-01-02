@@ -12,6 +12,8 @@ let matches = 0;
 let found = [];
 let missing = [];
 
+let transactionArray = [];
+
 const checkFolder = (folderName) =>
 {
     fs.readdir(folderName, (err, items) =>
@@ -20,7 +22,6 @@ const checkFolder = (folderName) =>
 
         for (var i=0; i<items.length; i++)
         {
-
             if(items[i].includes(`${selectedDay}${selectedMonth}${selectedYear}`))
             {
                 var lines = fs.readFileSync(`${folderName}/${items[i]}`).toString().split('.zip\n');
@@ -30,6 +31,7 @@ const checkFolder = (folderName) =>
                     if(lines[line] !== "")
                     {
                         ids.push({ term: { transactionId: lines[line] }});
+                        transactionArray.push(lines[line]);
                     }
                 }
             }
@@ -75,25 +77,23 @@ const searchQuery = (should) =>
         }
         else
         {
-            for(let i = 0; i < should.length; i++)
+            let ids = [];
+
+            for(let i = 0; i < hits.length; i++)
             {
-                matches++;
-
-                if(hits[i])
-                {
-                    matchesFound++;
-
-                    found.push(hits[i]._source.transactionId);
-                }
-                else
-                {
-                    matchesNotFound++;
-
-                    missing.push(should[i].term.transactionId);
-                }
+                ids.push(hits[i]._source.transactionId);
             }
 
-            const transactionMatches = { "query": [{"found": matchesFound}, {"missing": matchesNotFound}, {"total": matches} ]};
+            let found = transactionArray.filter(function(match) {
+                return ids.indexOf(match) > -1;
+            });
+
+            let missing = transactionArray.filter(function(match) {
+                return ids.indexOf(match) < 0;
+            });
+
+
+            const transactionMatches = { "query": [{"found": found.length}, {"missing": missing.length}, {"total": transactionArray.length} ]};
             const transactionIds = [{found}, {missing}, transactionMatches];
 
             fs.writeFile(`./Results/${selectedDay}-${selectedMonth}-${selectedYear}.json`, JSON.stringify(transactionIds, null, 4), (err) =>
@@ -138,9 +138,3 @@ const selectedDate = userInput.date.split("-");
 const selectedDay = selectedDate[0];
 const selectedMonth = selectedDate[1];
 const selectedYear = selectedDate[2];
-
-
-
-
-
-
