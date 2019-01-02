@@ -18,7 +18,7 @@ const checkFolder = (folderName) =>
 {
     fs.readdir(folderName, (err, items) =>
     {
-        var ids = [];
+        let ids = [];
 
         for (var i=0; i<items.length; i++)
         {
