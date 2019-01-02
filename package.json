@@ -1,0 +1,20 @@
+{
+    "name": "uuidfinder",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "commander": "^2.19.0",
+        "elasticsearch": "^15.2.0",
+        "express": "^4.16.1"
+    },
+    "devDependencies": {
+        "nodemon": "^1.18.8"
+    }
+}
