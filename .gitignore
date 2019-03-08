@@ -2,3 +2,5 @@
 /node_modules
 /FILES_TO_CHECK
 /results
+.DS_Store
+.gitattributes
