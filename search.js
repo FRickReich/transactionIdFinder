@@ -66,7 +66,7 @@ const searchQuery = (should) =>
         const hits = resp.hits.hits;
 
         if (!fs.existsSync("results"))
-            fs.mkdirSync("results");        
+            fs.mkdirSync("results");
 
         let ids = [];
 
@@ -83,17 +83,17 @@ const searchQuery = (should) =>
             return ids.indexOf(match) < 0;
         });
 
-        const transactionMatches = 
+        const transactionMatches =
         {
-            query: 
+            query:
             [
                 {
-                    found: found.length 
-                }, 
-                { 
-                    missing: missing.length 
-                }, 
-                { 
+                    found: found.length
+                },
+                {
+                    missing: missing.length
+                },
+                {
                     total: transactionIdArray.length
                 }
             ]
@@ -106,7 +106,7 @@ const searchQuery = (should) =>
             if (err) {
                 console.error(err);
             };
-            
+
             console.log(JSON.stringify(transactionIds, null, 4));
             console.log(`\n-> Created Output file: ${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`);
         });
