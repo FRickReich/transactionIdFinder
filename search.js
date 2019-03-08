@@ -64,24 +64,17 @@ const searchQuery = (should) =>
     }).then((resp) =>
     {
         const hits = resp.hits.hits;
+        let ids = [];
 
         if (!fs.existsSync("results"))
             fs.mkdirSync("results");
 
-        let ids = [];
-
         for(let i = 0; i < hits.length; i++)
             ids.push(hits[ i ]._source.transactionId);
 
-        let found = transactionIdArray.filter((match) =>
-        {
-            return ids.indexOf(match) > -1;
-        });
+        let found = transactionIdArray.filter((match) => ids.indexOf(match) > -1);
 
-        let missing = transactionIdArray.filter((match) =>
-        {
-            return ids.indexOf(match) < 0;
-        });
+        let missing = transactionIdArray.filter((match) => ids.indexOf(match) < 0);
 
         const transactionMatches =
         {
