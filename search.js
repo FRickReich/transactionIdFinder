@@ -92,9 +92,7 @@ const searchQuery = (should) =>
         fs.writeFile(`./results/${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`, transactionIds, (err) =>
         {
             if (err)
-            {
                 return console.error(err);
-            };
 
             console.log(transactionIds);
             console.log(`\n-> Created Output file: ${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`);
