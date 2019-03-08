@@ -22,7 +22,7 @@ const checkFolder = (folderName) =>
 
                 for(let line in lines)
                 {
-                    if(lines[ line ] !== "")
+                    if(lines[ line ] !== '')
                     {
                         ids.push({ term: { transactionId: lines[ line ] } });
                         transactionIdArray.push(lines[ line ]);
@@ -66,14 +66,13 @@ const searchQuery = (should) =>
         const hits = resp.hits.hits;
         let ids = [];
 
-        if (!fs.existsSync("results"))
-            fs.mkdirSync("results");
+        if (!fs.existsSync('results'))
+            fs.mkdirSync('results');
 
         for(let i = 0; i < hits.length; i++)
             ids.push(hits[ i ]._source.transactionId);
 
         let found = transactionIdArray.filter((match) => ids.indexOf(match) > -1);
-
         let missing = transactionIdArray.filter((match) => ids.indexOf(match) < 0);
 
         const transactionMatches =
@@ -131,7 +130,7 @@ if (inputValue === '')
     process.exit(1);
 }
 
-const selectedDate = userInput.date.split("-");
+const selectedDate = userInput.date.split('-');
 const selectedDay = selectedDate[0];
 const selectedMonth = selectedDate[1];
 const selectedYear = selectedDate[2];
