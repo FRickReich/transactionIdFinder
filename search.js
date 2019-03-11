@@ -10,8 +10,7 @@ let transactionIdArray = [  ];
 
 const checkFolder = (folderName) =>
 {
-    fs.readdir(folderName, (err, items) =>
-    {
+    fs.readdir(folderName, (err, items) => {
         let ids = [  ];
 
         items.forEach((item) => 
@@ -35,14 +34,12 @@ const checkFolder = (folderName) =>
 
 const searchQuery = (should) =>
 {
-    const esClient = new elasticsearch.Client(
-    {
+    const esClient = new elasticsearch.Client({
         host: `${ userInput.host }:${ userInput.port }`,
         requestTimeout: 30000
     });
 
-    esClient.search(
-    {
+    esClient.search({
         index: `*${ selectedYear }`,
         size: 10000,
         body: {
@@ -89,8 +86,7 @@ const searchQuery = (should) =>
 
         const transactionIds = JSON.stringify([{ found }, { missing }, transactionMatches ], null, 4);
 
-        fs.writeFile(`./results/${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`, transactionIds, (err) =>
-        {
+        fs.writeFile(`./results/${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`, transactionIds, (err) => {
             if (err)
                 return console.error(err);
 
