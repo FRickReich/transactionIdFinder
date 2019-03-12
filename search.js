@@ -5,17 +5,23 @@ const fs = require('fs');
 const commander = require('commander');
 const pkg = require('./package.json');
 
-let queryIdArray = [  ];
-let matchIds = [  ];
-let found = [  ];
-let missing = [  ];
+let queryIdArray = [  ],
+    matchIds     = [  ],
+    found        = [  ],
+    missing      = [  ];
 
-const checkFolder = async (folderName) =>
+// - CHECK FOLDER FOR FILES
+// - CYCLE FILES
+// - ADD LINES TO ARRAY
+// - SEARCH FOR MATCHES
+// - ADD MATCHES TO ARRAY
+// - COMPARE MATCHES AND QUERY LINES
+// - OUTPUT
+
+const checkFolder = (folderName) =>
 {
-    await fs.readdir(folderName, (err, items) => {
-
-        let ids = [  ];
-
+    fs.readdir(folderName, (err, items) => 
+    {
         items.forEach((item) =>
         {
             if(item !== '.DS_Store')
@@ -25,9 +31,7 @@ const checkFolder = async (folderName) =>
                 for(let line of lines)
                 {
                     if(/^[\s]*$/.test(line) === false)
-                    {
                         queryIdArray.push(line);
-                    }
                 }
             }
         });
@@ -38,31 +42,33 @@ const checkFolder = async (folderName) =>
 
 const cylceIds = async () =>
 {
-    const amount = 1000;
-    let counter = 0;
-    let query = [  ];
+    let amount       = 500,
+        counter      = 0,
+        query        = [  ],
+        matchesCount = queryIdArray.length;
 
     for (const queryId of queryIdArray)
     {
-        if(counter <= amount)
+        counter ++;
+        query.push({ term: { transactionId: queryId } });
+
+        if(matchesCount < amount)
+            amount = matchesCount;
+
+        if(counter === amount)
         {
-            query.push({ term: { transactionId: queryId } });
-
-            if(counter === amount)
-            {
-                await searchQuery(query);
-                query = [  ];
-                counter = 0;
-            }
+            await searchQuery(query);
+            
+            matchesCount -= amount;
+            query = [  ];
+            counter = 0;
         }
-
-        counter += 1;
     }
-    
-    outputResult(matchIds);
+
+    outputResult();
 }
 
-const searchQuery = async (should) =>
+const searchQuery = async (ids) =>
 {
     const selectedYear = 2019;
 
@@ -74,7 +80,7 @@ const searchQuery = async (should) =>
                     must: [
                         {
                             bool: {
-                                should
+                                should: ids
                             }
                         }
                     ]
@@ -89,7 +95,7 @@ const searchQuery = async (should) =>
     });
 }
 
-const outputResult = async (match) =>
+const outputResult = () =>
 {
     missing = queryIdArray.filter((match) => matchIds.indexOf(match) < 0);
     found = queryIdArray.filter((match) => matchIds.indexOf(match) > -1);
@@ -100,10 +106,10 @@ const outputResult = async (match) =>
         missing: missing.length,
         total: queryIdArray.length
     };
-    
+
     const transactionIds = JSON.stringify({ found, missing, query}, null, 4);
 
-    await fs.writeFile(`./results/results.json`, transactionIds, (err) => {
+    fs.writeFile(`./results/results.json`, transactionIds, (err) => {
         if (err)
             return console.error(err);
 
