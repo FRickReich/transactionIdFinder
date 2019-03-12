@@ -5,43 +5,69 @@ const fs = require('fs');
 const commander = require('commander');
 const pkg = require('./package.json');
 
-let inputValue = '';
-let transactionIdArray = [  ];
+let queryIdArray = [  ];
+let matchIds = [  ];
+let found = [  ];
+let missing = [  ];
 
-const checkFolder = (folderName) =>
+const checkFolder = async (folderName) =>
 {
-    fs.readdir(folderName, (err, items) => {
+    await fs.readdir(folderName, (err, items) => {
+
         let ids = [  ];
 
-        items.forEach((item) => 
+        items.forEach((item) =>
         {
-            if(item.includes(`${ selectedDay }.${ selectedMonth }.${ selectedYear }`))
+            if(item !== '.DS_Store')
             {
                 let lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
 
                 for(let line of lines)
                 {
-                    ids.push({ term: { transactionId: line } });
-                    transactionIdArray.push(line)
+                    if(/^[\s]*$/.test(line) === false)
+                    {
+                        queryIdArray.push(line);
+                    }
                 }
             }
         });
 
-        ids.filter(n => n);
-        searchQuery(ids);
+        cylceIds();
     });
 };
 
-const searchQuery = (should) =>
+const cylceIds = async () =>
 {
-    const esClient = new elasticsearch.Client({
-        host: `${ userInput.host }:${ userInput.port }`,
-        requestTimeout: 30000
-    });
+    const amount = 1000;
+    let counter = 0;
+    let query = [  ];
 
-    esClient.search({
+    for (const queryId of queryIdArray)
+    {
+        if(counter <= amount)
+        {
+            query.push({ term: { transactionId: queryId } });
+
+            if(counter === amount)
+            {
+                await searchQuery(query);
+                query = [  ];
+                counter = 0;
+            }
+        }
+
+        counter += 1;
+    }
+    
+    outputResult(matchIds);
+}
+
+const searchQuery = async (should) =>
+{
+    const selectedYear = 2019;
+
+    await esClient.search({
         index: `*${ selectedYear }`,
-        size: 10000,
         body: {
             query: {
                 bool: {
@@ -58,67 +84,46 @@ const searchQuery = (should) =>
     }).then((resp) =>
     {
         const hits = resp.hits.hits;
-        let ids = [];
 
-        if (!fs.existsSync('results'))
-            fs.mkdirSync('results');
-
-        hits.forEach(hit => ids.push(hit._source.transactionId));
-
-        const found = transactionIdArray.filter((match) => ids.indexOf(match) > -1);
-        const missing = transactionIdArray.filter((match) => ids.indexOf(match) < 0);
-
-        const transactionMatches =
-        {
-            query:
-            [
-                {
-                    found: found.length
-                },
-                {
-                    missing: missing.length
-                },
-                {
-                    total: transactionIdArray.length
-                }
-            ]
-        };
-
-        const transactionIds = JSON.stringify([{ found }, { missing }, transactionMatches ], null, 4);
-
-        fs.writeFile(`./results/${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`, transactionIds, (err) => {
-            if (err)
-                return console.error(err);
-
-            console.log(transactionIds);
-            console.log(`\n-> Created Output file: ${ selectedDay }-${ selectedMonth }-${ selectedYear }.json`);
-        });
+        hits.forEach(hit => matchIds.push(hit._source.transactionId));
     });
-};
+}
+
+const outputResult = async (match) =>
+{
+    missing = queryIdArray.filter((match) => matchIds.indexOf(match) < 0);
+    found = queryIdArray.filter((match) => matchIds.indexOf(match) > -1);
+
+    const query =
+    {
+        found: found.length,
+        missing: missing.length,
+        total: queryIdArray.length
+    };
+    
+    const transactionIds = JSON.stringify({ found, missing, query}, null, 4);
+
+    await fs.writeFile(`./results/results.json`, transactionIds, (err) => {
+        if (err)
+            return console.error(err);
+
+        console.log(transactionIds);
+    });
+}
 
 const userInput = commander
     .version(pkg.version)
     .description(pkg.description)
     .usage('[options] <command> [...]')
-    .option('-o --host <hostname>', 'hostname [localhost]', 'localhost')
-    .option('-p --port <number>', 'port number [9200]', '9200')
-    .option('-d --date <date>', 'date to search [01-12-2018]', '01-12-2018');
-
-userInput
-    .command('directory <input>')
-    .description('searches for matches in specified folder')
-    .action((input) =>
-    {
-        inputValue = input;
-        checkFolder(input);
-    });
+    .option('-o, --host <hostname>', 'hostname [localhost]', 'localhost')
+    .option('-p, --port <number>', 'port number [9200]', '9200')
+    .option('-d, --directory <directory>', 'directory to search for id files', 'Files');
 
 userInput.parse(process.argv);
 
-if (inputValue === '')
-{
-    userInput.help();
-    process.exit(1);
-}
+const esClient = new elasticsearch.Client({
+    host: `${ userInput.host }:${ userInput.port }`,
+    requestTimeout: 30000
+});
 
-const [ selectedDay, selectedMonth, selectedYear ] = userInput.date.split('-');
+checkFolder(userInput.directory);
