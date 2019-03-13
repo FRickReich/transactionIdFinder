@@ -163,7 +163,7 @@ const esClient = new elasticsearch.Client({
 });
 
 // Main application:
-const initialize = async () =>
+const energize = async () =>
 {
     const fileNames = await checkFolder(userInput.directory),
           idList = await createIdArray(fileNames),
@@ -173,4 +173,4 @@ const initialize = async () =>
     createOutput(matches);
 }
 
-initialize();
+energize();
