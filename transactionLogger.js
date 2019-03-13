@@ -62,11 +62,13 @@ const createIdArray = (files) =>
     }
 }
 
+// Cycle through ids from array and search for them on database:
 const cylceIds = async (ids) =>
 {
     let amount = 1000,
         counter = 0,
         query = [  ],
+        foundMatches = [  ],
         matchesCount = ids.length;
 
     const selectedYear = userInput.year;
@@ -81,13 +83,65 @@ const cylceIds = async (ids) =>
 
         if(counter === amount)
         {
+            await esClient.search({
+                index: `archive_invoice_tenant_yearly-c_*-${ selectedYear }`,
+                size: amount,
+                body: {
+                    query: {
+                        bool: {
+                            filter: {
+                                terms: {
+                                    transactionId: query
+                                }
+                            }
+                        }
+                    }
+                }
+            }).then((resp) =>
+            {
+                const hits = resp.hits.hits;
+        
+                hits.forEach(hit => foundMatches.push(hit._source.transactionId));
+            });
+
             matchesCount -= amount;
             query = [  ],
             counter = 0;
         }
     }
 
-    return ids;
+    return foundMatches;
+}
+
+const checkResults = (ids, list) =>
+{
+    const missing = list.filter((match) => ids.indexOf(match) < 0),
+          found = list.filter((match) => ids.indexOf(match) > -1);
+
+    const query =
+    {
+        found: found.length,
+        missing: missing.length,
+        total: list.length
+    };
+
+    return {found, missing, query};
+}
+
+const createOutput = (matches) =>
+{
+    const transactionIds = JSON.stringify(matches, null, 4);
+
+    if (!fs.existsSync('results'))
+        fs.mkdirSync('results');
+
+    fs.writeFile(`./results/results.json`, transactionIds, (err) =>
+    {
+        if (err)
+            return console.error(err);
+
+        console.log(transactionIds);
+    });
 }
 
 // Set up options for user input:
@@ -113,9 +167,10 @@ const initialize = async () =>
 {
     const fileNames = await checkFolder(userInput.directory),
           idList = await createIdArray(fileNames),
-          ids = await cylceIds(idList);
-
-          console.log(ids);
+          results = await cylceIds(idList),
+          matches = await checkResults(results, idList);
+          
+    createOutput(matches);
 }
 
 initialize();
