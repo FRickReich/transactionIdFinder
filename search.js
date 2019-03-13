@@ -29,7 +29,7 @@ const checkFolder = folderName =>
 // Create ID array:
 const createIdArray = (folderName, item) =>
 {
-    let lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
+    const lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
                 
     for(let line of lines)
     {
@@ -70,7 +70,7 @@ const cylceIds = async () =>
 // Search for matching ids:
 const searchQuery = async (ids, amount) =>
 {
-    const selectedYear = 2019;
+    const selectedYear = userInput.year;
 
     await esClient.search({
         index: `archive_invoice_tenant_yearly-c_*-${ selectedYear }`,
@@ -132,7 +132,8 @@ const userInput = commander
     .usage('[options] <command> [...]')
     .option('-o, --host <hostname>', 'hostname [localhost]', 'localhost')
     .option('-p, --port <number>', 'port number [9200]', '9200')
-    .option('-d, --directory <directory>', 'directory to search for id files', 'Files');
+    .option('-d, --directory <directory>', 'directory to search for id files', 'FILES_TO_CHECK')
+    .option('-y, --year <year>', 'year to search for', '2019');
 
 userInput.parse(process.argv);
 
