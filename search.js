@@ -1,33 +1,25 @@
 'use strict';
 
-const elasticsearch = require('elasticsearch');
-const fs = require('fs');
-const commander = require('commander');
-const pkg = require('./package.json');
+const elasticsearch = require('elasticsearch'),
+      fs = require('fs'),
+      commander = require('commander'),
+      pkg = require('./package.json');
 
 let queryIdArray = [  ],
-    matchIds     = [  ],
-    found        = [  ],
-    missing      = [  ];
+    matchIds     = [  ];
 
-// - CHECK FOLDER FOR FILES
-// - CYCLE FILES
-// - ADD LINES TO ARRAY
-// - SEARCH FOR MATCHES
-// - ADD MATCHES TO ARRAY
-// - COMPARE MATCHES AND QUERY LINES
-// - OUTPUT
-
-const checkFolder = (folderName) =>
+// Check folder for content
+const checkFolder = folderName =>
 {
-    fs.readdir(folderName, (err, items) => 
+    fs.readdir(folderName, (err, items) =>
     {
         items.forEach((item) =>
         {
+            // Ignore MacOS .DS_Store file:
             if(item !== '.DS_Store')
             {
                 let lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
-
+                
                 for(let line of lines)
                 {
                     if(/^[\s]*$/.test(line) === false)
@@ -40,9 +32,10 @@ const checkFolder = (folderName) =>
     });
 };
 
+// Cycle through ids from folder
 const cylceIds = async () =>
 {
-    let amount       = 500,
+    let amount       = 1000,
         counter      = 0,
         query        = [  ],
         matchesCount = queryIdArray.length;
@@ -50,40 +43,40 @@ const cylceIds = async () =>
     for (const queryId of queryIdArray)
     {
         counter ++;
-        query.push({ term: { transactionId: queryId } });
+        query.push(queryId);
 
         if(matchesCount < amount)
             amount = matchesCount;
 
         if(counter === amount)
         {
-            await searchQuery(query);
-            
+            await searchQuery(query, amount);
+
             matchesCount -= amount;
             query = [  ];
             counter = 0;
         }
     }
 
-    outputResult();
+    createOutput();
 }
 
-const searchQuery = async (ids) =>
+// Search for matching ids:
+const searchQuery = async (ids, amount) =>
 {
     const selectedYear = 2019;
 
     await esClient.search({
-        index: `*${ selectedYear }`,
+        index: `archive_invoice_tenant_yearly-c_*-${ selectedYear }`,
+        size: amount,
         body: {
             query: {
                 bool: {
-                    must: [
-                        {
-                            bool: {
-                                should: ids
-                            }
+                    filter: {
+                        terms: {
+                            transactionId: ids
                         }
-                    ]
+                    }
                 }
             }
         }
@@ -95,10 +88,11 @@ const searchQuery = async (ids) =>
     });
 }
 
-const outputResult = () =>
+// Compare matches to get results:
+const checkForResults = () =>
 {
-    missing = queryIdArray.filter((match) => matchIds.indexOf(match) < 0);
-    found = queryIdArray.filter((match) => matchIds.indexOf(match) > -1);
+    const missing = queryIdArray.filter((match) => matchIds.indexOf(match) < 0),
+          found = queryIdArray.filter((match) => matchIds.indexOf(match) > -1);
 
     const query =
     {
@@ -107,9 +101,17 @@ const outputResult = () =>
         total: queryIdArray.length
     };
 
-    const transactionIds = JSON.stringify({ found, missing, query}, null, 4);
+    return {found, missing, query};
+}
 
-    fs.writeFile(`./results/results.json`, transactionIds, (err) => {
+// Create output:
+const createOutput = () =>
+{
+    const results = checkForResults(),
+          transactionIds = JSON.stringify(results, null, 4);
+
+    fs.writeFile(`./results/results.json`, transactionIds, (err) =>
+    {
         if (err)
             return console.error(err);
 
@@ -117,6 +119,7 @@ const outputResult = () =>
     });
 }
 
+// Set up user client:
 const userInput = commander
     .version(pkg.version)
     .description(pkg.description)
@@ -127,6 +130,7 @@ const userInput = commander
 
 userInput.parse(process.argv);
 
+// Start elastic-search client:
 const esClient = new elasticsearch.Client({
     host: `${ userInput.host }:${ userInput.port }`,
     requestTimeout: 30000
