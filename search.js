@@ -6,7 +6,7 @@ const elasticsearch = require('elasticsearch'),
       pkg = require('./package.json');
 
 let queryIdArray = [  ],
-    matchIds     = [  ];
+    matchIds = [  ];
 
 // Check folder for content
 const checkFolder = folderName =>
@@ -35,9 +35,9 @@ const checkFolder = folderName =>
 // Cycle through ids from folder
 const cylceIds = async () =>
 {
-    let amount       = 1000,
-        counter      = 0,
-        query        = [  ],
+    let amount = 1000,
+        counter = 0,
+        query = [  ],
         matchesCount = queryIdArray.length;
 
     for (const queryId of queryIdArray)
