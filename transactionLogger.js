@@ -125,7 +125,7 @@ const checkResults = (ids, list) =>
         total: list.length
     };
 
-    return {found, missing, query};
+    return { found, missing, query };
 }
 
 const createOutput = (matches) =>
