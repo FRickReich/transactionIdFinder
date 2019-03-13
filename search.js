@@ -8,7 +8,7 @@ const elasticsearch = require('elasticsearch'),
 let queryIdArray = [  ],
     matchIds = [  ];
 
-// Check folder for content
+// Check folder for content:
 const checkFolder = folderName =>
 {
     fs.readdir(folderName, (err, items) =>
@@ -18,13 +18,7 @@ const checkFolder = folderName =>
             // Ignore MacOS .DS_Store file:
             if(item !== '.DS_Store')
             {
-                let lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
-                
-                for(let line of lines)
-                {
-                    if(/^[\s]*$/.test(line) === false)
-                        queryIdArray.push(line);
-                }
+                createIdArray(folderName, item);
             }
         });
 
@@ -32,7 +26,19 @@ const checkFolder = folderName =>
     });
 };
 
-// Cycle through ids from folder
+// Create ID array:
+const createIdArray = (folderName, item) =>
+{
+    let lines = fs.readFileSync(`${ folderName }/${ item }`).toString().split('.zip\n');
+                
+    for(let line of lines)
+    {
+        if(/^[\s]*$/.test(line) === false)
+            queryIdArray.push(line);
+    }
+}
+
+// Cycle through ids from array:
 const cylceIds = async () =>
 {
     let amount = 1000,
