@@ -55,10 +55,7 @@ const createIdArray = (files) =>
     }
     finally
     {
-        return transactionIdList.filter((item) =>
-        {
-            return !/^[\s]*$/.test(item);
-        });
+        return transactionIdList.filter((item) => !/^[\s]*$/.test(item));
     }
 }
 
